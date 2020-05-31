@@ -1,6 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {map} from 'rxjs/operators';
+import {LibraryService} from '../library.service';
 
 @Component({
   selector: 'app-library',
@@ -12,8 +11,11 @@ export class LibraryComponent implements OnInit {
 
   loadedLibraries = [];
   books = [];
+  isLoading = false;
+  error = false;
+  errorMessage = '';
 
-  constructor(private http: HttpClient) {
+  constructor(private service: LibraryService) {
   }
 
   ngOnInit() {
@@ -21,36 +23,29 @@ export class LibraryComponent implements OnInit {
   }
 
   onGetLibraryList() {
-    const libData = [];
-    this.http.get('http://localhost:9092/library/all')
-      .pipe(map(responseData => {
-        for (const key in responseData) {
-          if (responseData.hasOwnProperty(key)) {
-            libData.push({...responseData[key]});
-          }
-        }
-        return libData;
-      }))
-      .subscribe(libraries => {
-        console.log(libraries);
-        this.loadedLibraries = libraries;
-      });
+    this.isLoading = true;
+    this.service.fetchLibrary().subscribe(response => {
+      this.isLoading = false;
+      this.error = false;
+      this.loadedLibraries = response;
+    }, error => {
+      this.error = true;
+      this.isLoading = false;
+      this.errorMessage = error.message;
+    });
   }
 
   onGetBookList(lib) {
-    const bookData = [];
-    this.http.get('http://localhost:9092/book/library/' + lib)
-      .pipe(map(res => {
-        for (const key in res) {
-          if (res.hasOwnProperty(key)) {
-            bookData.push({...res[key]});
-          }
-        }
-        return bookData;
-      }))
-      .subscribe(bookk => {
-        console.log(bookk);
-        this.books = bookk;
-      });
+    this.isLoading = true;
+    this.service.fetchLibraryBook(lib).subscribe(response => {
+      this.isLoading = false;
+      this.error = false;
+      this.books = response;
+    }, error => {
+      this.error = true;
+      this.isLoading = false;
+      this.errorMessage = error.message;
+      console.log(error);
+    });
   }
 }
